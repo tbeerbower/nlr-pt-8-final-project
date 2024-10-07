@@ -1,8 +1,9 @@
 package com.techelevator.service;
 
-import com.techelevator.model.TextToSpeechResponseDto;
 import com.techelevator.model.Entry;
-import com.techelevator.model.TextToSpeechRequestDto;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -10,27 +11,28 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class SpeechService {
 
-    private static final String TTS_MAKER_API_URL = "https://api.ttsmaker.com/v1/create-tts-order";
-    private static final String TTS_MAKER_TOKEN = "ttsmaker_demo_token";
-    private static final String TTS_AUDIO_FORMAT = "mp3";
-    private static final int TTS_MAKER_MALE_VOICE_ID = 777;
-    private static final int TTS_MAKER_FEMALE_VOICE_ID = 778;
+    private static final String TTS_API_URL = "https://api.voicerss.org";
+    private static final String TTS_TOKEN = "1db885d5d5514372867c16e187528708";
+    private static final String TTS_MALE_VOICE = "John";
+    private static final String TTS_FEMALE_VOICE = "Linda";
 
     private final RestTemplate template = new RestTemplate();
 
-    public String getSpeechFromEntry(Entry entry, boolean femaleVoice) {
+    public ResponseEntity<byte[]> getSpeechFromEntry(Entry entry, boolean femaleVoice) {
 
-        String text = String.format("%s, %s", entry.getWord(), entry.getDefinition());
-        TextToSpeechRequestDto textToSpeechRequest = new TextToSpeechRequestDto(
-                TTS_MAKER_TOKEN,
-                text,
-                femaleVoice ? TTS_MAKER_FEMALE_VOICE_ID : TTS_MAKER_MALE_VOICE_ID,
-                TTS_AUDIO_FORMAT);
+        String text = String.format("%s!,%s", entry.getWord(), entry.getDefinition());
 
-        ResponseEntity<TextToSpeechResponseDto> responseEntity = template.postForEntity(
-                TTS_MAKER_API_URL, textToSpeechRequest, TextToSpeechResponseDto.class);
+        String apiUrl = String.format("%s?key=%s&hl=en-us&v=%s&src=%s",
+                TTS_API_URL, TTS_TOKEN,
+                femaleVoice ? TTS_FEMALE_VOICE : TTS_MALE_VOICE,
+                text);
 
-        TextToSpeechResponseDto textToSpeechResponse = responseEntity.getBody();
-        return textToSpeechResponse == null ? "" : textToSpeechResponse.getAudioFileUrl();
+        byte[] audioContent = template.getForObject(apiUrl, byte[].class);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("audio/wav"));
+        headers.setContentLength(audioContent.length);
+
+        return new ResponseEntity<>(audioContent, headers, HttpStatus.OK);
     }
 }

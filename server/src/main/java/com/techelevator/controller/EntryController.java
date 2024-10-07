@@ -5,6 +5,7 @@ import com.techelevator.model.Entry;
 import com.techelevator.model.EntrySpeechDto;
 import com.techelevator.service.SpeechService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 @RestController
@@ -44,10 +46,9 @@ public class EntryController {
     }
 
     @GetMapping(path = "/{id}/speech")
-    public EntrySpeechDto getEntrySpeech(@PathVariable long id, @RequestParam(defaultValue = "female") String voice) {
+    public ResponseEntity<byte[]> getEntrySpeech(@PathVariable long id, @RequestParam(defaultValue = "female") String voice) throws UnsupportedEncodingException {
         Entry entry = entryDao.getEntryById(id);
-        String audioUrl = speechService.getSpeechFromEntry(entry, !voice.equalsIgnoreCase("male"));
-        return new EntrySpeechDto(entry, audioUrl);
+        return speechService.getSpeechFromEntry(entry, !voice.equalsIgnoreCase("male"));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
